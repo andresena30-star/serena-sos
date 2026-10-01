@@ -1,10 +1,9 @@
 workflows:
   # =========================================================================
-  # TIER 1: Validação Contínua & Testes Rápidos (PR / Push)
-  # Execução rápida (< 5 min), sem consumo de certificados, direto no Simulador iOS
+  # TIER 1: Validacao Continua & Testes Rapidos (PR / Push)
   # =========================================================================
   serena-continuous-test:
-    name: Serena SOS - Testes Contínuos (iOS 18 Simulator)
+    name: "Serena SOS - Testes Continuos (iOS 18 Simulator)"
     instance_type: mac_mini_m2
     max_build_duration: 15
     environment:
@@ -21,12 +20,12 @@ workflows:
         - pattern: 'main'
           include: false
     scripts:
-      - name: Instalar XcodeGen e Gerar Projeto Nativo
+      - name: "Instalar XcodeGen e Gerar Projeto Nativo"
         script: |
           which xcodegen || brew install xcodegen
           xcodegen generate
 
-      - name: Executar Suíte Swift Testing no Simulador iOS
+      - name: "Executar Suite Swift Testing no Simulador iOS"
         script: |
           xcodebuild test \
             -project "SerenaSOS.xcodeproj" \
@@ -42,11 +41,10 @@ workflows:
       - /tmp/xcodebuild_logs/*.log
 
   # =========================================================================
-  # TIER 2: Release & Publicação TestFlight (Assinatura Automática Oficial)
-  # Disparo: push na main ou tags v*
+  # TIER 2: Release & Publicacao TestFlight (Assinatura Automatica Oficial)
   # =========================================================================
   serena-ios-release:
-    name: Serena SOS - Release & TestFlight Distribution
+    name: "Serena SOS - Release & TestFlight Distribution"
     instance_type: mac_mini_m2
     max_build_duration: 30
     integrations:
@@ -73,34 +71,34 @@ workflows:
           include: true
           source: true
     scripts:
-      - name: Instalar XcodeGen e Gerar Projeto iOS
+      - name: "Instalar XcodeGen e Gerar Projeto iOS"
         script: |
           which xcodegen || brew install xcodegen
           xcodegen generate
 
-      - name: Inicializar Chaveiro Temporário Isolado
+      - name: "Inicializar Chaveiro Temporario Isolado"
         script: |
           keychain initialize
 
-      - name: Provisionamento Automático com App Store Connect API
+      - name: "Provisionamento Automatico com App Store Connect API"
         script: |
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
 
-      - name: Injetar Certificados e Perfis no Projeto
+      - name: "Injetar Certificados e Perfis no Projeto"
         script: |
           keychain add-certificates
           xcode-project use-profiles --project "$XCODE_PROJECT"
 
-      - name: Prevenção de Rejeição: Auto-Incremento de Versão
+      - name: "Auto-Incremento do Numero de Build"
         script: |
           LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
           NEXT_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
           echo "Atualizando build number para: $NEXT_BUILD_NUMBER"
           agvtool new-version -all $NEXT_BUILD_NUMBER
 
-      - name: Executar Testes de Validação Pré-Release
+      - name: "Executar Testes de Validacao Pre-Release"
         script: |
           xcodebuild test \
             -project "$XCODE_PROJECT" \
@@ -108,7 +106,7 @@ workflows:
             -destination "platform=iOS Simulator,name=iPhone 16,OS=18.0" \
             -resultBundlePath build/ReleaseTestResults.xcresult
 
-      - name: Compilar Pacote .ipa Assinado Oficial
+      - name: "Compilar Pacote IPA Assinado Oficial"
         script: |
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
