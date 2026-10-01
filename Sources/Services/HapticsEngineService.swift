@@ -1,7 +1,8 @@
 import CoreHaptics
 import Foundation
 
-public actor HapticsEngineService {
+@MainActor
+public final class HapticsEngineService: Sendable {
     private var engine: CHHapticEngine?
     private var isSupported: Bool = false
 
@@ -9,13 +10,18 @@ public actor HapticsEngineService {
         self.isSupported = CHHapticEngine.capabilitiesForHardware().supportsHaptics
     }
 
-    public func startEngine() async throws {
+    public func startEngine() {
         guard isSupported else { return }
-        engine = try CHHapticEngine()
-        try await engine?.start()
+        do {
+            let newEngine = try CHHapticEngine()
+            try newEngine.start()
+            self.engine = newEngine
+        } catch {
+            self.engine = nil
+        }
     }
 
-    public func playInhaleRamp(duration: Double) async throws {
+    public func playInhaleRamp(duration: Double) {
         guard isSupported, let engine = engine else { return }
 
         let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.8)
@@ -27,12 +33,16 @@ public actor HapticsEngineService {
             duration: duration
         )
 
-        let pattern = try CHHapticPattern(events: [event], parameters: [])
-        let player = try engine.makePlayer(with: pattern)
-        try player.start(atTime: CHHapticTimeImmediate)
+        do {
+            let pattern = try CHHapticPattern(events: [event], parameters: [])
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: CHHapticTimeImmediate)
+        } catch {
+            // Falha graciosa sem travar a UI
+        }
     }
 
-    public func playExhaleSoft(duration: Double) async throws {
+    public func playExhaleSoft(duration: Double) {
         guard isSupported, let engine = engine else { return }
 
         let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.4)
@@ -44,8 +54,12 @@ public actor HapticsEngineService {
             duration: duration
         )
 
-        let pattern = try CHHapticPattern(events: [event], parameters: [])
-        let player = try engine.makePlayer(with: pattern)
-        try player.start(atTime: CHHapticTimeImmediate)
+        do {
+            let pattern = try CHHapticPattern(events: [event], parameters: [])
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: CHHapticTimeImmediate)
+        } catch {
+            // Falha graciosa sem travar a UI
+        }
     }
 }

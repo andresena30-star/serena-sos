@@ -15,9 +15,7 @@ public final class SOSBreathingViewModel {
     private var timerTask: Task<Void, Never>?
 
     public init() {
-        Task {
-            try? await hapticsService.startEngine()
-        }
+        hapticsService.startEngine()
     }
 
     public func toggleSession() {
@@ -53,7 +51,7 @@ public final class SOSBreathingViewModel {
                 self.currentPhase = .inhale
                 self.instructionText = "Inale profundamente pelo nariz..."
                 withAnimation(.easeInOut(duration: 3.0)) { self.orbScale = 1.6 }
-                try? await self.hapticsService.playInhaleRamp(duration: 3.0)
+                self.hapticsService.playInhaleRamp(duration: 3.0)
                 try? await Task.sleep(for: .seconds(3.0))
                 guard !Task.isCancelled else { break }
 
@@ -76,7 +74,7 @@ public final class SOSBreathingViewModel {
                 self.currentPhase = .exhale
                 self.instructionText = "Solte devagar pela boca..."
                 withAnimation(.easeInOut(duration: 7.0)) { self.orbScale = 1.0 }
-                try? await self.hapticsService.playExhaleSoft(duration: 7.0)
+                self.hapticsService.playExhaleSoft(duration: 7.0)
                 try? await Task.sleep(for: .seconds(7.0))
 
                 self.sessionDuration += 13
