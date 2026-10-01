@@ -13,7 +13,6 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: false
     CURRENT_PROJECT_VERSION: 1
     MARKETING_VERSION: "1.0.0"
-    DEVELOPMENT_TEAM: "" # Codemagic automatically manages code signing
     CODE_SIGN_STYLE: Automatic
     GENERATE_INFOPLIST_FILE: false
 
@@ -27,11 +26,11 @@ targets:
       - path: Resources
     settings:
       base:
+        PRODUCT_NAME: SerenaSOS
         PRODUCT_BUNDLE_IDENTIFIER: com.pnrt.serenasos
         INFOPLIST_FILE: Resources/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: false
-        PRODUCT_NAME: "Serena SOS"
         TARGETED_DEVICE_FAMILY: "1" # iPhone
 
   SerenaSOSTests:
@@ -44,6 +43,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pnrt.serenasos.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/SerenaSOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SerenaSOS"
+        BUNDLE_LOADER: "$(TEST_HOST)"
         GENERATE_INFOPLIST_FILE: true
 
 schemes:
