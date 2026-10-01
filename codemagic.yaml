@@ -1,6 +1,6 @@
 workflows:
   # =========================================================================
-  # TIER 1: Validacao Continua & Testes Rapidos (PR / Push)
+  # TIER 1: Validacao Continua & Testes Rapidos (iOS 18 Simulator)
   # =========================================================================
   serena-continuous-test:
     name: "Serena SOS - Testes Continuos (iOS 18 Simulator)"
@@ -41,22 +41,19 @@ workflows:
       - /tmp/xcodebuild_logs/*.log
 
   # =========================================================================
-  # TIER 2: Release & Publicacao TestFlight (Assinatura Automatica Oficial)
+  # TIER 2: Release & Publicacao TestFlight (Assinatura Oficial)
   # =========================================================================
   serena-ios-release:
     name: "Serena SOS - Release & TestFlight Distribution"
     instance_type: mac_mini_m2
-    max_build_duration: 30
-    integrations:
-      app_store_connect: Codemagic CI
+    max_build_duration: 35
     environment:
+      groups:
+        - app_store_credentials
       vars:
         XCODE_PROJECT: "SerenaSOS.xcodeproj"
         XCODE_SCHEME: "SerenaSOS"
         BUNDLE_ID: "com.pnrt.serenasos"
-        APP_STORE_APPLE_ID: "6740192831"
-      groups:
-        - app_store_credentials
       xcode: 16.0
       cocoapods: default
     triggering:
@@ -85,17 +82,14 @@ workflows:
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
-
-      - name: "Injetar Certificados e Perfis no Projeto"
-        script: |
           keychain add-certificates
           xcode-project use-profiles --project "$XCODE_PROJECT"
 
       - name: "Auto-Incremento do Numero de Build"
         script: |
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID" 2>/dev/null || echo 0)
           NEXT_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
-          echo "Atualizando build number para: $NEXT_BUILD_NUMBER"
+          echo "Proximo build number: $NEXT_BUILD_NUMBER"
           agvtool new-version -all $NEXT_BUILD_NUMBER
 
       - name: "Executar Testes de Validacao Pre-Release"
@@ -104,7 +98,8 @@ workflows:
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME" \
             -destination "platform=iOS Simulator,name=iPhone 16,OS=18.0" \
-            -resultBundlePath build/ReleaseTestResults.xcresult
+            -resultBundlePath build/ReleaseTestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: "Compilar Pacote IPA Assinado Oficial"
         script: |
@@ -120,14 +115,13 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
-        beta_groups:
-          - "Early Adopters"
-          - "Internal QA"
       email:
         recipients:
-          - release@pnrt.studio
+          - andresena30@gmail.com
         notify:
           success: true
           failure: true
