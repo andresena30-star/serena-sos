@@ -1,0 +1,72 @@
+{
+  "identifier" : "E2B7A091",
+  "nonRenewingSubscriptions" : [ ],
+  "products" : [ ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_storeKitErrors" : [ ]
+  },
+  "subscriptions" : [
+    {
+      "adHocOffers" : [ ],
+      "codeOffers" : [ ],
+      "displayPrice" : "19.90",
+      "familyShareable" : true,
+      "groupNumber" : 1,
+      "internalID" : "PROD_MONTHLY_01",
+      "introductoryOffer" : null,
+      "localizations" : [
+        {
+          "description" : "Acesso completo aos recursos de prevenção e saúde somática",
+          "displayName" : "Serena Pro Mensal",
+          "locale" : "pt_BR"
+        },
+        {
+          "description" : "Full access to somatic prevention and mental health tools",
+          "displayName" : "Serena Pro Monthly",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.pnrt.serenasos.monthly",
+      "recurringSubscriptionPeriod" : "P1M",
+      "referenceName" : "Serena Pro Mensal",
+      "subscriptionGroupID" : "SERENA_PRO_GROUP",
+      "type" : "RecurringSubscription"
+    },
+    {
+      "adHocOffers" : [ ],
+      "codeOffers" : [ ],
+      "displayPrice" : "119.90",
+      "familyShareable" : true,
+      "groupNumber" : 2,
+      "internalID" : "PROD_ANNUAL_01",
+      "introductoryOffer" : {
+        "internalID" : "TRIAL_7D_01",
+        "numberOfPeriods" : 1,
+        "paymentMode" : "free",
+        "subscriptionPeriod" : "P1W"
+      },
+      "localizations" : [
+        {
+          "description" : "Economize 50% com 7 dias gratuitos de teste",
+          "displayName" : "Serena Pro Anual",
+          "locale" : "pt_BR"
+        },
+        {
+          "description" : "Save 50% with 7 days free trial",
+          "displayName" : "Serena Pro Annual",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.pnrt.serenasos.annual",
+      "recurringSubscriptionPeriod" : "P1Y",
+      "referenceName" : "Serena Pro Anual",
+      "subscriptionGroupID" : "SERENA_PRO_GROUP",
+      "type" : "RecurringSubscription"
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

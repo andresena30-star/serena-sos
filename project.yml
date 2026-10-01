@@ -1,0 +1,66 @@
+name: SerenaSOS
+options:
+  bundleIdPrefix: com.pnrt
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: false
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: "1.0.0"
+    DEVELOPMENT_TEAM: "" # Codemagic automatically manages code signing
+    CODE_SIGN_STYLE: Automatic
+    GENERATE_INFOPLIST_FILE: false
+
+targets:
+  SerenaSOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sources
+      - path: Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pnrt.serenasos
+        INFOPLIST_FILE: Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: false
+        PRODUCT_NAME: "Serena SOS"
+        TARGETED_DEVICE_FAMILY: "1" # iPhone
+
+  SerenaSOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: SerenaSOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pnrt.serenasos.tests
+        GENERATE_INFOPLIST_FILE: true
+
+schemes:
+  SerenaSOS:
+    build:
+      targets:
+        SerenaSOS: all
+        SerenaSOSTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - SerenaSOSTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

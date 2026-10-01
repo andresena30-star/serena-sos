@@ -1,0 +1,135 @@
+workflows:
+  # =========================================================================
+  # TIER 1: Validação Contínua & Testes Rápidos (PR / Push)
+  # Execução rápida (< 5 min), sem consumo de certificados, direto no Simulador iOS
+  # =========================================================================
+  serena-continuous-test:
+    name: Serena SOS - Testes Contínuos (iOS 18 Simulator)
+    instance_type: mac_mini_m2
+    max_build_duration: 15
+    environment:
+      xcode: 16.0
+      cocoapods: default
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: '*'
+          include: true
+          source: true
+        - pattern: 'main'
+          include: false
+    scripts:
+      - name: Instalar XcodeGen e Gerar Projeto Nativo
+        script: |
+          which xcodegen || brew install xcodegen
+          xcodegen generate
+
+      - name: Executar Suíte Swift Testing no Simulador iOS
+        script: |
+          xcodebuild test \
+            -project "SerenaSOS.xcodeproj" \
+            -scheme "SerenaSOS" \
+            -destination "platform=iOS Simulator,name=iPhone 16,OS=18.0" \
+            -resultBundlePath build/TestResults.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+    artifacts:
+      - build/TestResults.xcresult
+      - /tmp/xcodebuild_logs/*.log
+
+  # =========================================================================
+  # TIER 2: Release & Publicação TestFlight (Assinatura Automática Oficial)
+  # Disparo: push na main ou tags v*
+  # =========================================================================
+  serena-ios-release:
+    name: Serena SOS - Release & TestFlight Distribution
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    integrations:
+      app_store_connect: Codemagic CI
+    environment:
+      vars:
+        XCODE_PROJECT: "SerenaSOS.xcodeproj"
+        XCODE_SCHEME: "SerenaSOS"
+        BUNDLE_ID: "com.pnrt.serenasos"
+        APP_STORE_APPLE_ID: "6740192831"
+      groups:
+        - app_store_credentials
+      xcode: 16.0
+      cocoapods: default
+    triggering:
+      events:
+        - push
+        - tag
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+        - pattern: 'v*'
+          include: true
+          source: true
+    scripts:
+      - name: Instalar XcodeGen e Gerar Projeto iOS
+        script: |
+          which xcodegen || brew install xcodegen
+          xcodegen generate
+
+      - name: Inicializar Chaveiro Temporário Isolado
+        script: |
+          keychain initialize
+
+      - name: Provisionamento Automático com App Store Connect API
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+
+      - name: Injetar Certificados e Perfis no Projeto
+        script: |
+          keychain add-certificates
+          xcode-project use-profiles --project "$XCODE_PROJECT"
+
+      - name: Prevenção de Rejeição: Auto-Incremento de Versão
+        script: |
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          NEXT_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
+          echo "Atualizando build number para: $NEXT_BUILD_NUMBER"
+          agvtool new-version -all $NEXT_BUILD_NUMBER
+
+      - name: Executar Testes de Validação Pré-Release
+        script: |
+          xcodebuild test \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -destination "platform=iOS Simulator,name=iPhone 16,OS=18.0" \
+            -resultBundlePath build/ReleaseTestResults.xcresult
+
+      - name: Compilar Pacote .ipa Assinado Oficial
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --mode release
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ReleaseTestResults.xcresult
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - "Early Adopters"
+          - "Internal QA"
+      email:
+        recipients:
+          - release@pnrt.studio
+        notify:
+          success: true
+          failure: true
