@@ -1,13 +1,13 @@
 workflows:
   # =========================================================================
-  # TIER 1: Validacao Continua & Testes Rapidos (iOS 18 Simulator)
+  # TIER 1: Validacao Continua & Testes Rapidos (iOS Simulator)
   # =========================================================================
   serena-continuous-test:
     name: "Serena SOS - Testes Continuos (iOS 18 Simulator)"
     instance_type: mac_mini_m2
     max_build_duration: 15
     environment:
-      xcode: 16.0
+      xcode: 26.4
       cocoapods: default
     triggering:
       events:
@@ -30,7 +30,7 @@ workflows:
           xcodebuild test \
             -project "SerenaSOS.xcodeproj" \
             -scheme "SerenaSOS" \
-            -destination "platform=iOS Simulator,name=iPhone 16,OS=18.0" \
+            -destination "platform=iOS Simulator,name=iPhone 17" \
             -resultBundlePath build/TestResults.xcresult \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
@@ -46,15 +46,16 @@ workflows:
   serena-ios-release:
     name: "Serena SOS - Release & TestFlight Distribution"
     instance_type: mac_mini_m2
-    max_build_duration: 35
+    max_build_duration: 40
     environment:
       groups:
         - app_store_credentials
       vars:
+        APP_STORE_APPLE_ID: "6818197877"
+        BUNDLE_ID: "com.pnrt.serenasos"
         XCODE_PROJECT: "SerenaSOS.xcodeproj"
         XCODE_SCHEME: "SerenaSOS"
-        BUNDLE_ID: "com.pnrt.serenasos"
-      xcode: 16.0
+      xcode: 26.4
       cocoapods: default
     triggering:
       events:
@@ -87,7 +88,7 @@ workflows:
 
       - name: "Auto-Incremento do Numero de Build"
         script: |
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID" 2>/dev/null || echo 0)
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
           NEXT_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
           echo "Proximo build number: $NEXT_BUILD_NUMBER"
           agvtool new-version -all $NEXT_BUILD_NUMBER
@@ -97,7 +98,7 @@ workflows:
           xcodebuild test \
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME" \
-            -destination "platform=iOS Simulator,name=iPhone 16,OS=18.0" \
+            -destination "platform=iOS Simulator,name=iPhone 17" \
             -resultBundlePath build/ReleaseTestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO
 
